@@ -1,0 +1,16 @@
+<template>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#">🐋 EV Charging Planner</a>
+            <a href="https://github.com/PanuvitPNV/django-evChargingPlanner" target="_blank" class="secondary">
+                <font-awesome-icon :icon="['fab', 'github']" size="lg"/>
+            </a>
+        </div>
+    </nav>
+</template>
+
+<script>
+export default {
+    name: 'Navbar',
+}
+</script>

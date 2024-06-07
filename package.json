@@ -9,15 +9,23 @@
     "node": "18.x"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.36",
+    "@fortawesome/free-brands-svg-icons": "^5.15.4",
+    "@fortawesome/free-regular-svg-icons": "^5.15.4",
+    "@fortawesome/free-solid-svg-icons": "^5.15.4",
+    "@fortawesome/vue-fontawesome": "^3.0.8",
+    "@googlemaps/js-api-loader": "^1.16.6",
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.3",
     "core-js": "^3.30.2",
     "vue": "^3.3.4"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.21.8",
     "@vue/cli-plugin-babel": "~5.0.8",
     "@vue/cli-plugin-eslint": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
     "@vue/compiler-sfc": "^3.3.4",
-    "@babel/eslint-parser": "^7.21.8",
     "eslint": "^8.4.1",
     "eslint-plugin-vue": "^9.14.0"
   },
@@ -33,7 +41,9 @@
     "parserOptions": {
       "parser": "@babel/eslint-parser"
     },
-    "rules": {}
+    "rules": {
+      "vue/multi-word-component-names": "off"
+    }
   },
   "browserslist": [
     "> 1%",
