@@ -237,7 +237,7 @@
               class="form-control"
               placeholder="Enter the battery capacity"
               pattern="\d+(\.\d+)?"
-              :value="selectedBatteryCapacity"
+              v-model="selectedBatteryCapacity"
               required
               :disabled="!manualInputChecked"
             />
@@ -373,8 +373,6 @@
 <script setup>
 import { ref, computed} from 'vue';
 import { Loader } from "@googlemaps/js-api-loader";
-// import { onForm, Form, Field, ErrorMessage } from 'vee-validate';
-// import * as yup from 'yup';
 
 const cars_data = ref([]);
 const selectedBrand = ref("");
@@ -385,28 +383,6 @@ const selectedAvailableChargers = ref([]);
 const selectedProvider = ref([]);
 const manualInputChecked = ref(false);
 const submitError = ref(false);
-
-// const schema = yup.object({
-//   selectedBrand: yup.string().required('Please select your car brand.'),
-//   selectedModel: yup.string().required('Please select your car model.'),
-//   selectedBatteryCapacity: yup.number().required('Please enter the battery capacity.'),
-//   selectedAvailableChargers: yup.array().min(1, 'Please select at least one charging port.'),
-//   selectedProvider: yup.array().min(1, 'Please select at least one provider.'),
-//   selectedReserveBattery: yup.number().required('Please enter the reserve battery.'),
-//   selectedInitBattery: yup.number().required('Please enter the initial battery.'),
-//   selectedArrivalBattery: yup.number().required('Please enter the arrival battery.'),
-// });
-
-// const form = ref({
-//   selectedBrand: "",
-//   selectedModel: "",
-//   selectedBatteryCapacity: "",
-//   selectedAvailableChargers: [],
-//   selectedProvider: [],
-//   selectedReserveBattery: 10,
-//   selectedInitBattery: 50,
-//   selectedArrivalBattery: 50,
-// });
 
 fetch(process.env.VUE_APP_API_URL + "/ev_cars")
   .then((response) => response.json())
@@ -427,7 +403,7 @@ const filteredModels = computed(() => {
 
 const onBrandChange = () => {
   selectedModel.value = ""; // Reset selected model when brand changes
-  selectedBatteryCapacity.value = null; // Reset battery capacity
+  selectedBatteryCapacity.value = ""; // Reset battery capacity
   selectedAvailableChargers.value = []; // Reset available chargers
 };
 
@@ -445,12 +421,12 @@ const onModelChange = () => {
 
 const onManualInputChange = () => {
   if (manualInputChecked.value) {
-    selectedBrand.value = ""; // Reset selected brand
-    selectedModel.value = ""; // Reset selected model
-    selectedBatteryCapacity.value = null; // Reset battery capacity
+    selectedBrand.value = "";
+    selectedModel.value = "";
   }
   selectedAvailableChargers.value = [];
   selectedCar.value = {};
+  selectedBatteryCapacity.value = "";
 };
 
 const updateSelectedChargers = (event) => {
@@ -482,6 +458,7 @@ const updateSelectedProvider = (event) => {
 };
 
 const handleSubmit = () => {
+  submitError.value = false;
   if (manualInputChecked.value) {
     if (!selectedBatteryCapacity.value) {
       submitError.value = true;
