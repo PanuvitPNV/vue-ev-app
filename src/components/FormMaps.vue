@@ -1,6 +1,6 @@
 <template>
   <div class="container mt-4">
-    <form @submit.prevent="handleSubmit">
+    <form ref="formRef" @submit.prevent="handleSubmit">
       <div class="row mb-3">
         <!-- Car brand and model selection -->
         <div class="col-md-6">
@@ -262,6 +262,78 @@
 
     <div class="mt-4" id="GoogleMaps" style="width: 100%; height: 100vh"></div>
   </div>
+
+  <div
+    class="modal fade"
+    id="infoModal"
+    tabindex="-1"
+    aria-labelledby="infoModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="infoModalLabel">💡 Direction Information</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">This is a modal body content.</div>
+        <div class="modal-footer">
+          <a
+            id="gmap-links"
+            type="button"
+            target="_blank"
+            href="https://www.google.com/maps"
+            class="btn btn-success"
+            >Open in Google Maps</a
+          >
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="modal fade"
+    id="errorModal"
+    tabindex="-1"
+    aria-labelledby="errorModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="errorModalLabel">⚠️ Error Message</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">This is a modal body content.</div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -285,7 +357,16 @@ const selectedReverseBattery = ref(10);
 const selectedInitBattery = ref(50);
 const selectedArrivalBattery = ref(50);
 const manualInputChecked = ref(false);
-// const submitError = ref(false);
+const submitError = ref(false);
+
+const formRef = ref(null);
+
+let map;
+const loader = new Loader({
+  apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
+  version: "weekly",
+  libraries: ["maps", "routes", "places", "marker"],
+});
 
 const providers = [
   { name: "PTT", logo: ptt_ico },
@@ -357,20 +438,10 @@ watch(manualInputChecked, () => {
   selectedAvailableChargers.value = [];
 });
 
-// const handleSubmit = (event) => {
-//   if (selectedBrand.value === "" || selectedModel.value === "") {
-//     submitError.value = true;
-//   } else {
-//     submitError.value = false;
-//   }
-// };
-
 onMounted(async () => {
-  let map = null;
-
   const infoButton = () => {
     const infoButton = document.createElement("button");
-    infoButton.classList.add("btn", "btn-warning");
+    infoButton.classList.add("btn", "btn-info");
     infoButton.style.margin = "10px";
     infoButton.style.height = "50px";
     infoButton.style.width = "50px";
@@ -378,9 +449,8 @@ onMounted(async () => {
     infoButton.style.alignItems = "center"; // Center vertically
     infoButton.style.justifyContent = "center"; // Center horizontally
     infoButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>`;
-    infoButton.onclick = () => {
-      alert("This is an info button");
-    };
+    infoButton.setAttribute("data-bs-toggle", "modal");
+    infoButton.setAttribute("data-bs-target", "#infoModal");
     return infoButton;
   };
 
@@ -392,15 +462,12 @@ onMounted(async () => {
     console.error(error);
   }
 
-  const loader = new Loader({
-    apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
-    version: "weekly",
-    libraries: ["maps", "routes", "places", "marker"],
-  });
+  let directionsService;
+  let directionsRenderer;
 
   loader.load().then(async (google) => {
-    // const directionsService = new google.maps.DirectionsService();
-    const directionsRenderer = new google.maps.DirectionsRenderer({
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
       suppressMarkers: true,
     });
 
@@ -433,8 +500,92 @@ onMounted(async () => {
       destinationInput,
       AutocompleteOptions
     );
-
   });
+
+  /* eslint-disable no-unused-vars */
+  const handleSubmit = (event) => {
+    submitError.value = false;
+    if (!manualInputChecked.value) {
+      if (!selectedBrand.value || !selectedModel.value) {
+        alert("Please select your car brand and model!");
+        submitError.value = true;
+      }
+    }
+
+    if (!selectedBatteryCapacity.value) {
+      alert("Please enter the battery capacity!");
+      submitError.value = true;
+    }
+
+    if (!selectedAvailableChargers.value.length) {
+      alert("Please select at least one charging port!");
+      submitError.value = true;
+    }
+
+    if (!selectedProvider.value.length) {
+      alert("Please select at least one provider!");
+      submitError.value = true;
+    }
+
+    const origin = document.getElementById("search-origin").value;
+    const destination = document.getElementById("search-destination").value;
+
+    if (submitError.value) {
+      console.error("Error in form submission!");
+      return;
+    } else {
+      console.log("Form submitted successfully!");
+      const request = {
+        origin_address: origin,
+        destination_address: destination,
+        car_brand: selectedBrand.value,
+        car_model: selectedModel.value,
+        battery_initial: selectedInitBattery.value,
+        battery_arrival: selectedArrivalBattery.value,
+        battery_capacity: selectedBatteryCapacity.value,
+        charging_ports: selectedAvailableChargers.value.join(","),
+        provider_filter: selectedProvider.value.join(","),
+        method: "forward",
+      };
+
+      fetch(process.env.VUE_APP_API_URL + "/optimize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Success:", data);
+
+          loader.load().then((google) => {
+            directionsService.route(
+              {
+                origin: origin,
+                destination: destination,
+                travelMode: google.maps.TravelMode.DRIVING,
+              },
+              (result, status) => {
+                if (status === "OK") {
+                  directionsRenderer.setDirections(result);
+                  directionsRenderer.setMap(map);
+                } else {
+                  alert("Directions request failed due to " + status);
+                }
+              }
+            );
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+          });
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }
+  };
+  if (formRef.value) {
+    formRef.value.addEventListener("submit", handleSubmit);
+  }
 });
 </script>
 
