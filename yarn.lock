@@ -5977,6 +5977,11 @@ vee-validate@^4.13.1:
     "@vue/devtools-api" "^6.6.1"
     type-fest "^4.8.3"
 
+vue-cookies@^1.8.4:
+  version "1.8.4"
+  resolved "https://registry.npmjs.org/vue-cookies/-/vue-cookies-1.8.4.tgz"
+  integrity sha512-9zjvACKE4W0kEb8OQtXzpizKhf6zfFOG/Z1TEUjSJn4Z4rintuAHo8y/FpCUhTWHMmPe8E+Fko+/tiXVM+5jOw==
+
 vue-eslint-parser@^9.3.0:
   version "9.3.0"
   resolved "https://registry.npmjs.org/vue-eslint-parser/-/vue-eslint-parser-9.3.0.tgz"

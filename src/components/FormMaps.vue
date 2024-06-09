@@ -2,6 +2,7 @@
   <div class="container mt-4">
     <form @submit.prevent="handleSubmit">
       <div class="row mb-3">
+        <!-- Car brand and model selection -->
         <div class="col-md-6">
           <div v-if="!manualInputChecked">
             <div class="mb-3">
@@ -50,78 +51,31 @@
               </select>
             </div>
           </div>
+          <!-- Charging port selection and provider filter -->
           <div class="row">
             <div class="col-md-6">
               <fieldset class="mb-3">
-                <legend class="mb-1" style="font-size: larger;">Charging port:</legend>
-                <div class="form-check">
+                <legend class="mb-1" style="font-size: larger">
+                  Charging port:
+                </legend>
+                <div
+                  class="form-check"
+                  v-for="port in ['Type2', 'CCS2', 'CHAdeMO']"
+                  :key="port"
+                >
                   <input
-                    id="charger-type1"
+                    :id="'charger-' + port.toLowerCase()"
                     class="form-check-input"
                     type="checkbox"
-                    name="Type1"
-                    :checked="selectedAvailableChargers.includes('Type1')"
+                    :name="port"
+                    :checked="selectedAvailableChargers.includes(port)"
                     :disabled="!manualInputChecked"
                     @change="updateSelectedChargers"
                   />
-                  <label class="form-check-label" for="charger-type1"
-                    >Type1</label
-                  >
-                </div>
-                <div class="form-check">
-                  <input
-                    id="charger-type2"
-                    class="form-check-input"
-                    type="checkbox"
-                    name="Type2"
-                    :checked="selectedAvailableChargers.includes('Type2')"
-                    :disabled="!manualInputChecked"
-                    @change="updateSelectedChargers"
-                  />
-                  <label class="form-check-label" for="charger-type2"
-                    >Type2</label
-                  >
-                </div>
-                <div class="form-check">
-                  <input
-                    id="charger-ccs2"
-                    class="form-check-input"
-                    type="checkbox"
-                    name="CCS2"
-                    :checked="selectedAvailableChargers.includes('CCS2')"
-                    :disabled="!manualInputChecked"
-                    @change="updateSelectedChargers"
-                  />
-                  <label class="form-check-label" for="charger-ccs2"
-                    >CCS2</label
-                  >
-                </div>
-                <div class="form-check">
-                  <input
-                    id="charger-chademo"
-                    class="form-check-input"
-                    type="checkbox"
-                    name="CHAdeMO"
-                    :checked="selectedAvailableChargers.includes('CHAdeMO')"
-                    :disabled="!manualInputChecked"
-                    @change="updateSelectedChargers"
-                  />
-                  <label class="form-check-label" for="charger-chademo"
-                    >CHAdeMO</label
-                  >
-                </div>
-                <div class="form-check">
-                  <input
-                    id="charger-superchargers"
-                    class="form-check-input"
-                    type="checkbox"
-                    name="Superchargers"
-                    :checked="selectedAvailableChargers.includes('Superchargers')"
-                    :disabled="!manualInputChecked"
-                    @change="updateSelectedChargers"
-                  />
-                  <label class="form-check-label" for="charger-superchargers"
-                    >Superchargers</label
+                  <label
+                    class="form-check-label"
+                    :for="'charger-' + port.toLowerCase()"
+                    >{{ port }}</label
                   >
                 </div>
               </fieldset>
@@ -130,108 +84,40 @@
             <div class="col-md-6">
               <fieldset class="mb-3">
                 <label class="mb-1">Provider filter:</label>
-                <div class="form-check">
+                <div
+                  class="form-check"
+                  v-for="provider in providers"
+                  :key="provider.name"
+                >
                   <input
-                    id="provider-ppt"
+                    :id="'provider-' + provider.name.toLowerCase()"
                     class="form-check-input"
                     type="checkbox"
-                    name="PTT"
-                    :checked="selectedProvider.includes('PTT')"
+                    :name="provider.name"
+                    :checked="selectedProvider.includes(provider.name)"
                     @change="updateSelectedProvider"
                   />
-                  <label class="form-check-label" for="provider-ppt">
-                    <img
-                      src="../assets/station_logo/ptt.png"
-                      alt="PTT"
-                      style="width: 20px; height: 20px"
-                      class="img-fluid rounded-circle me-2"
-                    />PTT
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input
-                    id="provider-pea"
-                    class="form-check-input"
-                    type="checkbox"
-                    name="PEA"
-                    :checked="selectedProvider.includes('PEA')"
-                    @change="updateSelectedProvider"
-                  />
-                  <label class="form-check-label" for="provider-pea">
-                    <img
-                      src="../assets/station_logo/pea.png"
-                      alt="PEA"
-                      style="width: 20px; height: 20px"
-                      class="img-fluid rounded-circle me-2"
-                    />PEA
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input
-                    id="provider-elex"
-                    class="form-check-input"
-                    type="checkbox"
-                    name="EleX"
-                    :checked="selectedProvider.includes('EleX')"
-                    @change="updateSelectedProvider"
-                  />
-                  <label class="form-check-label" for="provider-elex">
-                    <img
-                      src="../assets/station_logo/elex.png"
-                      alt="EleX"
-                      style="width: 20px; height: 20px"
-                      class="img-fluid rounded-circle me-2"
-                    />EleX
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input
-                    id="provider-altervim"
-                    class="form-check-input"
-                    type="checkbox"
-                    name="Altervim"
-                    :checked="selectedProvider.includes('Altervim')"
-                    @change="updateSelectedProvider"
-                  />
-                  <label class="form-check-label" for="provider-altervim">
-                    <img
-                      src="../assets/station_logo/altervim.png"
-                      alt="Altervim"
-                      style="width: 20px; height: 20px"
-                      class="img-fluid rounded-circle me-2"
-                    />Altervim
-                  </label
+                  <label
+                    class="form-check-label"
+                    :for="'provider-' + provider.name.toLowerCase()"
                   >
-                </div>
-                <div class="form-check">
-                  <input
-                    id="provider-ea"
-                    class="form-check-input"
-                    type="checkbox"
-                    name="EA"
-                    :checked="selectedProvider.includes('EA')"
-                    @change="updateSelectedProvider"
-                  />
-                  <label class="form-check-label" for="provider-ea">
                     <img
-                      src="../assets/station_logo/ea.png"
-                      alt="EA"
+                      :src="provider.logo"
+                      :alt="provider.name"
                       style="width: 20px; height: 20px"
                       class="img-fluid rounded-circle me-2"
-                    />EA
-                  </label
-                  >
+                    />{{ provider.name }}
+                  </label>
                 </div>
               </fieldset>
             </div>
           </div>
         </div>
 
+        <!-- Battery and other inputs -->
         <div class="col-md-6">
           <div class="mb-3">
-            <label class="form-label"
-              >Battery capacity (kWh):</label
-            >
+            <label class="form-label">Battery capacity (kWh):</label>
             <input
               id="battery-capacity"
               class="form-control"
@@ -247,9 +133,7 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label"
-              >Reserve battery (%):</label
-            >
+            <label class="form-label">Reserve battery (%):</label>
             <div class="d-flex align-items-center">
               <input
                 id="reserveInputId"
@@ -257,19 +141,21 @@
                 type="range"
                 min="1"
                 max="100"
-                value="10"
-                oninput="reserveOutputId.value = reserveInputId.value"
+                v-model="selectedReverseBattery"
                 required
-                style="width: 93%;"
+                style="width: 93%"
               />
-              <output id="reserveOutputId" class="col-1" style="text-align: center;">10</output>
+              <output
+                id="reserveOutputId"
+                class="col-1"
+                style="text-align: center"
+                >{{ selectedReverseBattery }}</output
+              >
             </div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label"
-              >Initial battery (%):</label
-            >
+            <label class="form-label">Initial battery (%):</label>
             <div class="d-flex align-items-center">
               <input
                 id="initInputId"
@@ -277,19 +163,21 @@
                 type="range"
                 min="1"
                 max="100"
-                value="50"
-                oninput="initOutputId.value = initInputId.value"
+                v-model="selectedInitBattery"
                 required
-                style="width: 93%;"
+                style="width: 93%"
               />
-              <output id="initOutputId" class="col-1" style="text-align: center;">50</output>
+              <output
+                id="initOutputId"
+                class="col-1"
+                style="text-align: center"
+                >{{ selectedInitBattery }}</output
+              >
             </div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label"
-              >Arrival battery (%):</label
-            >
+            <label class="form-label">Arrival battery (%):</label>
             <div class="d-flex align-items-center">
               <input
                 id="arrivalInputId"
@@ -297,12 +185,16 @@
                 type="range"
                 min="1"
                 max="100"
-                value="50"
-                oninput="arrivalOutputId.value = arrivalInputId.value"
+                v-model="selectedArrivalBattery"
                 required
-                style="width: 93%;"
+                style="width: 93%"
               />
-              <output id="arrivalOutputId" class="col-1" style="text-align: center;">50</output>
+              <output
+                id="arrivalOutputId"
+                class="col-1"
+                style="text-align: center"
+                >{{ selectedArrivalBattery }}</output
+              >
             </div>
           </div>
 
@@ -312,7 +204,6 @@
               class="form-check-input"
               type="checkbox"
               role="switch"
-              @change="onManualInputChange"
               v-model="manualInputChecked"
             />
             <label class="form-check-label" for="manual-input"
@@ -324,6 +215,7 @@
 
       <hr />
 
+      <!-- Location inputs -->
       <fieldset class="mb-3">
         <div class="mb-3">
           <label for="search-origin" class="form-label">Origin Location</label>
@@ -333,6 +225,7 @@
             class="form-control"
             placeholder="Enter an origin location"
             required
+            @focus="clearInput"
           />
           <small class="form-text" style="color: #ffa23a"
             >* Please select a location from the dropdown list</small
@@ -349,6 +242,7 @@
             class="form-control"
             placeholder="Enter a destination location"
             required
+            @focus="clearInput"
           />
           <small class="form-text" style="color: #ffa23a"
             >* Please select a location from the dropdown list</small
@@ -366,13 +260,19 @@
       </div>
     </form>
 
-    <div class="mt-4" ref="googleMap" style="width: 100%; height: 100vh"></div>
+    <div class="mt-4" id="GoogleMaps" style="width: 100%; height: 100vh"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed} from 'vue';
+import { ref, computed, watch, onMounted } from "vue";
 import { Loader } from "@googlemaps/js-api-loader";
+
+import ptt_ico from "@/assets/station_logo/ptt.png";
+import pea_ico from "@/assets/station_logo/pea.png";
+import altervim_ico from "@/assets/station_logo/altervim.png";
+import elex_ico from "@/assets/station_logo/elex.png";
+import ea_ico from "@/assets/station_logo/ea.png";
 
 const cars_data = ref([]);
 const selectedBrand = ref("");
@@ -381,13 +281,19 @@ const selectedCar = ref({});
 const selectedBatteryCapacity = ref("");
 const selectedAvailableChargers = ref([]);
 const selectedProvider = ref([]);
+const selectedReverseBattery = ref(10);
+const selectedInitBattery = ref(50);
+const selectedArrivalBattery = ref(50);
 const manualInputChecked = ref(false);
-const submitError = ref(false);
+// const submitError = ref(false);
 
-fetch(process.env.VUE_APP_API_URL + "/ev_cars")
-  .then((response) => response.json())
-  .then((data) => (cars_data.value = data))
-  .catch((error) => console.error(error));
+const providers = [
+  { name: "PTT", logo: ptt_ico },
+  { name: "PEA", logo: pea_ico },
+  { name: "EleX", logo: elex_ico },
+  { name: "Altervim", logo: altervim_ico },
+  { name: "EA", logo: ea_ico },
+];
 
 const uniqueBrands = computed(() => {
   const brands = cars_data.value.map((car) => car.brand);
@@ -395,19 +301,18 @@ const uniqueBrands = computed(() => {
 });
 
 const filteredModels = computed(() => {
-  if (!selectedBrand.value) return [];
   return cars_data.value
     .filter((car) => car.brand === selectedBrand.value)
     .map((car) => car.model);
 });
 
-const onBrandChange = () => {
+watch(selectedBrand, () => {
   selectedModel.value = ""; // Reset selected model when brand changes
   selectedBatteryCapacity.value = ""; // Reset battery capacity
   selectedAvailableChargers.value = []; // Reset available chargers
-};
+});
 
-const onModelChange = () => {
+watch(selectedModel, () => {
   selectedCar.value = cars_data.value.find(
     (car) => car.model === selectedModel.value
   );
@@ -417,118 +322,124 @@ const onModelChange = () => {
   selectedAvailableChargers.value = selectedCar.value
     ? selectedCar.value.charging_port
     : [];
-};
-
-const onManualInputChange = () => {
-  if (manualInputChecked.value) {
-    selectedBrand.value = "";
-    selectedModel.value = "";
-  }
-  selectedAvailableChargers.value = [];
-  selectedCar.value = {};
-  selectedBatteryCapacity.value = "";
-};
+});
 
 const updateSelectedChargers = (event) => {
-  const checkboxName = event.target.name;
+  const charger = event.target.name;
   if (event.target.checked) {
-    // Add charger type to selectedAvailableChargers
-    selectedAvailableChargers.value.push(checkboxName);
+    selectedAvailableChargers.value.push(charger);
   } else {
-    // Remove charger type from selectedAvailableChargers
-    const index = selectedAvailableChargers.value.indexOf(checkboxName);
-    if (index !== -1) {
-      selectedAvailableChargers.value.splice(index, 1);
-    }
+    selectedAvailableChargers.value = selectedAvailableChargers.value.filter(
+      (item) => item !== charger
+    );
   }
 };
 
 const updateSelectedProvider = (event) => {
-  const checkboxName = event.target.name;
+  const provider = event.target.name;
   if (event.target.checked) {
-    // Add provider to selectedProvider
-    selectedProvider.value.push(checkboxName);
+    selectedProvider.value.push(provider);
   } else {
-    // Remove provider from selectedProvider
-    const index = selectedProvider.value.indexOf(checkboxName);
-    if (index !== -1) {
-      selectedProvider.value.splice(index, 1);
-    }
+    selectedProvider.value = selectedProvider.value.filter(
+      (item) => item !== provider
+    );
   }
 };
 
-const handleSubmit = () => {
-  submitError.value = false;
-  if (manualInputChecked.value) {
-    if (!selectedBatteryCapacity.value) {
-      submitError.value = true;
-      alert("Please enter the battery capacity");
-    }
-    if (selectedAvailableChargers.value.length === 0) {
-      submitError.value = true;
-      alert("Please select at least one charging port");
-    }
-  }else{
-    if (!selectedBrand.value || !selectedModel.value) {
-      submitError.value = true;
-      alert("Please select your car brand and model");
-    }
+const clearInput = (event) => {
+  event.target.value = "";
+};
+
+watch(manualInputChecked, () => {
+  selectedBrand.value = "";
+  selectedModel.value = "";
+  selectedBatteryCapacity.value = "";
+  selectedAvailableChargers.value = [];
+});
+
+// const handleSubmit = (event) => {
+//   if (selectedBrand.value === "" || selectedModel.value === "") {
+//     submitError.value = true;
+//   } else {
+//     submitError.value = false;
+//   }
+// };
+
+onMounted(async () => {
+  let map = null;
+
+  const infoButton = () => {
+    const infoButton = document.createElement("button");
+    infoButton.classList.add("btn", "btn-warning");
+    infoButton.style.margin = "10px";
+    infoButton.style.height = "50px";
+    infoButton.style.width = "50px";
+    infoButton.style.display = "flex"; // Add flexbox display
+    infoButton.style.alignItems = "center"; // Center vertically
+    infoButton.style.justifyContent = "center"; // Center horizontally
+    infoButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>`;
+    infoButton.onclick = () => {
+      alert("This is an info button");
+    };
+    return infoButton;
+  };
+
+  try {
+    const response = await fetch(process.env.VUE_APP_API_URL + "/ev_cars");
+    const data = await response.json();
+    cars_data.value = data;
+  } catch (error) {
+    console.error(error);
   }
 
-  if (selectedProvider.value.length === 0) {
-    submitError.value = true;
-    alert("Please select at least one provider");
-  }
-
-  console.log({
-    selectedBrand: selectedBrand.value,
-    selectedModel: selectedModel.value,
-    selectedCar: selectedCar.value,
-    selectedBatteryCapacity: selectedBatteryCapacity.value,
-    selectedAvailableChargers: selectedAvailableChargers.value,
-    selectedProvider: selectedProvider.value,
-    submitError: submitError.value,
+  const loader = new Loader({
+    apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
+    version: "weekly",
+    libraries: ["maps", "routes", "places", "marker"],
   });
 
-};
+  loader.load().then(async (google) => {
+    // const directionsService = new google.maps.DirectionsService();
+    const directionsRenderer = new google.maps.DirectionsRenderer({
+      suppressMarkers: true,
+    });
 
+    map = new google.maps.Map(document.getElementById("GoogleMaps"), {
+      center: { lat: 18.80377379840586, lng: 98.95255970304493 },
+      zoom: 16,
+      mapId: "aa02cb992666fba3",
+      disableDefaultUI: true,
+    });
+
+    directionsRenderer.setMap(map);
+    map.controls[google.maps.ControlPosition.TOP_RIGHT].push(infoButton());
+
+    const AutocompleteOptions = {
+      fields: ["place_id", "formatted_address", "geometry", "name"],
+      componentRestrictions: { country: "th" },
+    };
+
+    const originInput = document.getElementById("search-origin");
+    const destinationInput = document.getElementById("search-destination");
+
+    /* eslint-disable no-unused-vars */
+    const originAutocomplete = new google.maps.places.Autocomplete(
+      originInput,
+      AutocompleteOptions
+    );
+
+    /* eslint-disable no-unused-vars */
+    const destinationAutocomplete = new google.maps.places.Autocomplete(
+      destinationInput,
+      AutocompleteOptions
+    );
+
+  });
+});
 </script>
 
-
-
 <script>
-
 export default {
   name: "FormMaps",
-  data() {
-    return {
-      google: null,
-      map: null,
-    };
-  },
-  mounted() {
-    const loader = new Loader({
-      apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
-      version: "weekly",
-      libraries: ["maps", "routes", "places", "marker"],
-    });
-
-    loader.load().then((google) => {
-      // (async () => {
-      //     const { Map } = await google.maps.importLibrary("maps");
-      //     const { DirectionsService, DirectionsRenderer } = await google.maps.importLibrary("routes");
-      //     const { Autocomplete } = await google.maps.importLibrary("places");
-      //     const { AdvancedMarkerElement, Marker } = await google.maps.importLibrary("marker");
-      // })();
-
-      this.google = google;
-      this.map = new google.maps.Map(this.$refs.googleMap, {
-        center: { lat: 18.80377379840586, lng: 98.95255970304493 },
-        zoom: 16,
-        mapId: "aa02cb992666fba3",
-        disableDefaultUI: true,
-      });
-    });
-  },
 };
 </script>
