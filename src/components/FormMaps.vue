@@ -19,7 +19,7 @@
                 :disabled="manualInputChecked || isLoading"
                 required
               >
-                <option selected disabled value="">
+                <option selected disabled value="null">
                   Select your car brand...
                 </option>
                 <template v-for="(brand, index) in uniqueBrands" :key="index">
@@ -42,7 +42,7 @@
                 :disabled="manualInputChecked || !selectedBrand || isLoading"
                 required
               >
-                <option selected disabled value="">
+                <option selected disabled value="null">
                   Select your car model...
                 </option>
                 <template v-for="(model, index) in filteredModels" :key="index">
@@ -304,7 +304,60 @@
             aria-label="Close"
           ></button>
         </div>
-        <div class="modal-body">This is a modal body content.</div>
+        <div class="modal-body">
+          <!-- Accordion -->
+          <div class="accordion">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingOne">
+                <button
+                  class="accordion-button"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapseOne"
+                  aria-expanded="true"
+                  aria-controls="collapseOne"
+                >
+                  Charging Stops
+                </button>
+              </h2>
+              <div
+                id="collapseOne"
+                class="accordion-collapse collapse show"
+                aria-labelledby="headingOne"
+                data-bs-parent="#accordionExample"
+              >
+                <div class="accordion-body">
+                  charging stops details...
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingTwo">
+                <button
+                  class="accordion-button collapsed"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapseTwo"
+                  aria-expanded="false"
+                  aria-controls="collapseTwo"
+                >
+                  Summary
+                </button>
+              </h2>
+              <div
+                id="collapseTwo"
+                class="accordion-collapse collapse"
+                aria-labelledby="headingTwo"
+                data-bs-parent="#accordionExample"
+              >
+                <div class="accordion-body">
+                  summary details...
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Accordion -->
+        </div>
         <div class="modal-footer">
           <a
             id="gmap-links"
@@ -326,6 +379,14 @@
     </div>
   </div>
 
+  <button
+    type="button"
+    class="btn btn-primary"
+    data-bs-toggle="modal"
+    data-bs-target="#errorModal"
+  >
+    test
+  </button>
   <div
     class="modal fade"
     id="errorModal"
@@ -345,8 +406,13 @@
           ></button>
         </div>
         <div class="modal-body">
-          An unexpected issue occurred. Please try again later or contact
-          support for further assistance.
+          <p>
+            An unexpected issue occurred. Please try again later or contact
+            support for further assistance.
+          </p>
+          <p v-if="errorMessage" class="text-danger">
+            <b>ERROR: {{ errorMessage }}</b>
+          </p>
         </div>
         <div class="modal-footer">
           <button
@@ -373,10 +439,10 @@ import { ref, computed, watch, onMounted } from "vue";
 import { Loader } from "@googlemaps/js-api-loader";
 
 const cars_data = ref([]);
-const selectedBrand = ref("");
-const selectedModel = ref("");
+const selectedBrand = ref(null);
+const selectedModel = ref(null);
 const selectedCar = ref({});
-const selectedBatteryCapacity = ref("");
+const selectedBatteryCapacity = ref(null);
 const selectedAvailableChargers = ref([]);
 const selectedProvider = ref([]);
 const selectedReverseBattery = ref(10);
@@ -385,7 +451,7 @@ const selectedArrivalBattery = ref(50);
 const manualInputChecked = ref(false);
 const submitError = ref(false);
 const isLoading = ref(false);
-
+const errorMessage = ref(null);
 const formRef = ref(null);
 
 const providers = [
@@ -408,8 +474,8 @@ const filteredModels = computed(() => {
 });
 
 watch(selectedBrand, () => {
-  selectedModel.value = ""; // Reset selected model when brand changes
-  selectedBatteryCapacity.value = ""; // Reset battery capacity
+  selectedModel.value = null; // Reset selected model when brand changes
+  selectedBatteryCapacity.value = null; // Reset battery capacity
   selectedAvailableChargers.value = []; // Reset available chargers
 });
 
@@ -448,13 +514,13 @@ const updateSelectedProvider = (event) => {
 };
 
 const clearInput = (event) => {
-  event.target.value = "";
+  event.target.value = null;
 };
 
 watch(manualInputChecked, () => {
-  selectedBrand.value = "";
-  selectedModel.value = "";
-  selectedBatteryCapacity.value = "";
+  selectedBrand.value = null;
+  selectedModel.value = null;
+  selectedBatteryCapacity.value = null;
   selectedAvailableChargers.value = [];
 });
 
