@@ -16,7 +16,7 @@
                 aria-label="Select your car brand..."
                 v-model="selectedBrand"
                 @change="onBrandChange"
-                :disabled="manualInputChecked"
+                :disabled="manualInputChecked || isLoading"
                 required
               >
                 <option selected disabled value="">
@@ -39,7 +39,7 @@
                 aria-label="Select your car model..."
                 v-model="selectedModel"
                 @change="onModelChange"
-                :disabled="manualInputChecked || !selectedBrand"
+                :disabled="manualInputChecked || !selectedBrand || isLoading"
                 required
               >
                 <option selected disabled value="">
@@ -55,9 +55,7 @@
           <div class="row">
             <div class="col-md-6">
               <fieldset class="mb-3">
-                <legend class="mb-1" style="font-size: larger">
-                  Charging port:
-                </legend>
+                <label class="mb-1">Charging port:</label>
                 <div
                   class="form-check"
                   v-for="port in ['Type2', 'CCS2', 'CHAdeMO']"
@@ -69,7 +67,7 @@
                     type="checkbox"
                     :name="port"
                     :checked="selectedAvailableChargers.includes(port)"
-                    :disabled="!manualInputChecked"
+                    :disabled="!manualInputChecked || isLoading"
                     @change="updateSelectedChargers"
                   />
                   <label
@@ -95,6 +93,7 @@
                     type="checkbox"
                     :name="provider.name"
                     :checked="selectedProvider.includes(provider.name)"
+                    :disabled="isLoading"
                     @change="updateSelectedProvider"
                   />
                   <label
@@ -125,7 +124,7 @@
               pattern="\d+(\.\d+)?"
               v-model="selectedBatteryCapacity"
               required
-              :disabled="!manualInputChecked"
+              :disabled="!manualInputChecked || isLoading"
             />
             <small class="form-text" style="color: #ffa23a"
               >E.g., 100, 50.5, 123.456 or 220.0</small
@@ -144,6 +143,7 @@
                 v-model="selectedReverseBattery"
                 required
                 style="width: 93%"
+                :disabled="isLoading"
               />
               <output
                 id="reserveOutputId"
@@ -166,6 +166,7 @@
                 v-model="selectedInitBattery"
                 required
                 style="width: 93%"
+                :disabled="isLoading"
               />
               <output
                 id="initOutputId"
@@ -188,6 +189,7 @@
                 v-model="selectedArrivalBattery"
                 required
                 style="width: 93%"
+                :disabled="isLoading"
               />
               <output
                 id="arrivalOutputId"
@@ -205,6 +207,7 @@
               type="checkbox"
               role="switch"
               v-model="manualInputChecked"
+              :disabled="isLoading"
             />
             <label class="form-check-label" for="manual-input"
               >Enable manual customization</label
@@ -226,6 +229,7 @@
             placeholder="Enter an origin location"
             required
             @focus="clearInput"
+            :disabled="isLoading"
           />
           <small class="form-text" style="color: #ffa23a"
             >* Please select a location from the dropdown list</small
@@ -243,6 +247,7 @@
             placeholder="Enter a destination location"
             required
             @focus="clearInput"
+            :disabled="isLoading"
           />
           <small class="form-text" style="color: #ffa23a"
             >* Please select a location from the dropdown list</small
@@ -251,12 +256,28 @@
       </fieldset>
 
       <div class="d-grid gap-2">
-        <input
+        <button
+          v-if="!isLoading"
           id="search-direction"
           type="submit"
           class="btn btn-primary"
-          value="Search Direction"
-        />
+        >
+          Search Direction
+        </button>
+        <button
+          v-else
+          id="search-direction"
+          type="button"
+          class="btn btn-primary"
+          disabled
+        >
+          <span
+            class="spinner-border spinner-border-sm"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          Loading...
+        </button>
       </div>
     </form>
 
@@ -273,7 +294,9 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="infoModalLabel">💡 Direction Information</h5>
+          <h5 class="modal-title" id="infoModalLabel">
+            💡 Direction Information
+          </h5>
           <button
             type="button"
             class="btn-close"
@@ -313,7 +336,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="errorModalLabel">⚠️ Error Message</h5>
+          <h5 class="modal-title" id="errorModalLabel">⚠️ Error</h5>
           <button
             type="button"
             class="btn-close"
@@ -321,7 +344,10 @@
             aria-label="Close"
           ></button>
         </div>
-        <div class="modal-body">This is a modal body content.</div>
+        <div class="modal-body">
+          An unexpected issue occurred. Please try again later or contact
+          support for further assistance.
+        </div>
         <div class="modal-footer">
           <button
             type="button"
@@ -334,17 +360,17 @@
       </div>
     </div>
   </div>
+  <!-- Loading Overlay -->
+  <div v-if="isLoading" class="loading-overlay">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { Loader } from "@googlemaps/js-api-loader";
-
-import ptt_ico from "@/assets/station_logo/ptt.png";
-import pea_ico from "@/assets/station_logo/pea.png";
-import altervim_ico from "@/assets/station_logo/altervim.png";
-import elex_ico from "@/assets/station_logo/elex.png";
-import ea_ico from "@/assets/station_logo/ea.png";
 
 const cars_data = ref([]);
 const selectedBrand = ref("");
@@ -358,22 +384,16 @@ const selectedInitBattery = ref(50);
 const selectedArrivalBattery = ref(50);
 const manualInputChecked = ref(false);
 const submitError = ref(false);
+const isLoading = ref(false);
 
 const formRef = ref(null);
 
-let map;
-const loader = new Loader({
-  apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
-  version: "weekly",
-  libraries: ["maps", "routes", "places", "marker"],
-});
-
 const providers = [
-  { name: "PTT", logo: ptt_ico },
-  { name: "PEA", logo: pea_ico },
-  { name: "EleX", logo: elex_ico },
-  { name: "Altervim", logo: altervim_ico },
-  { name: "EA", logo: ea_ico },
+  { name: "PTT", logo: require("@/assets/station_logo/ptt.png") },
+  { name: "PEA", logo: require("@/assets/station_logo/pea.png") },
+  { name: "EleX", logo: require("@/assets/station_logo/elex.png") },
+  { name: "Altervim", logo: require("@/assets/station_logo/altervim.png") },
+  { name: "EA", logo: require("@/assets/station_logo/ea.png") },
 ];
 
 const uniqueBrands = computed(() => {
@@ -439,6 +459,14 @@ watch(manualInputChecked, () => {
 });
 
 onMounted(async () => {
+  let map;
+  let markers = [];
+
+  const loader = new Loader({
+    apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
+    version: "weekly",
+    libraries: ["maps", "routes", "places", "marker"],
+  });
   const infoButton = () => {
     const infoButton = document.createElement("button");
     infoButton.classList.add("btn", "btn-info");
@@ -535,6 +563,13 @@ onMounted(async () => {
       return;
     } else {
       console.log("Form submitted successfully!");
+
+      for (let i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+      }
+      markers = [];
+      directionsRenderer.setDirections({ routes: [] });
+
       const request = {
         origin_address: origin,
         destination_address: destination,
@@ -548,6 +583,9 @@ onMounted(async () => {
         method: "forward",
       };
 
+      // Show loading overlay
+      isLoading.value = true;
+
       fetch(process.env.VUE_APP_API_URL + "/optimize", {
         method: "POST",
         headers: {
@@ -557,25 +595,64 @@ onMounted(async () => {
       })
         .then((response) => response.json())
         .then((data) => {
+          // Hide loading overlay
+          isLoading.value = false;
           console.log("Success:", data);
 
           loader.load().then((google) => {
+            function create_marker(location, title, data = null) {
+              const marker = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: title,
+                icon: {
+                  url: require(`@/assets/station_marker/${title.toLowerCase()}.png`),
+                  scaledSize: new google.maps.Size(36, 45),
+                },
+              });
+              markers.push(marker);
+            }
+
+            const waypts = data["solution detail"].map((station) => {
+              create_marker(
+                { lat: station.Latitude, lng: station.Longitude },
+                station.Provider.toLowerCase(),
+                station
+              );
+              return {
+                location: { lat: station.Latitude, lng: station.Longitude },
+                stopover: true,
+              };
+            });
+
             directionsService.route(
               {
                 origin: origin,
                 destination: destination,
+                waypoints: waypts,
+                optimizeWaypoints: true,
                 travelMode: google.maps.TravelMode.DRIVING,
               },
               (result, status) => {
                 if (status === "OK") {
                   directionsRenderer.setDirections(result);
-                  directionsRenderer.setMap(map);
+
+                  var origin_leg = result.routes[0].legs[0];
+                  var destination_leg =
+                    result.routes[0].legs[result.routes[0].legs.length - 1];
+
+                  create_marker(origin_leg.start_location, "origin");
+                  create_marker(destination_leg.end_location, "destination");
                 } else {
                   alert("Directions request failed due to " + status);
                 }
               }
             );
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+            window.scrollTo({
+              top: document.body.scrollHeight,
+              behavior: "smooth",
+            });
           });
         })
         .catch((error) => {
@@ -594,3 +671,18 @@ export default {
   name: "FormMaps",
 };
 </script>
+
+<style scoped>
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+</style>
