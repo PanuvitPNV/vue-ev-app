@@ -276,7 +276,7 @@
             role="status"
             aria-hidden="true"
           ></span>
-          Loading...
+          Searching...
         </button>
       </div>
     </form>
@@ -306,7 +306,7 @@
         </div>
         <div class="modal-body">
           <!-- Accordion -->
-          <div class="accordion">
+          <div class="accordion" id="resultDetails">
             <div class="accordion-item">
               <h2 class="accordion-header" id="headingOne">
                 <button
@@ -324,21 +324,88 @@
                 id="collapseOne"
                 class="accordion-collapse collapse show"
                 aria-labelledby="headingOne"
-                data-bs-parent="#accordionExample"
               >
-                <div class="accordion-body">
-                  charging stops details...
+                <div class="accordion-body" v-if="resultInfo">
+                  <ol>
+                    <li
+                      v-for="(station, index) in resultInfo['solution detail']"
+                      :key="index"
+                      class="mb-3"
+                    >
+                      <img
+                        :src="
+                          require(`@/assets/station_logo/${station.Provider.toLowerCase()}.png`)
+                        "
+                        :alt="station.Provider"
+                        style="width: 30px; height: 30px"
+                        class="img-fluid rounded-circle me-1 ms-1"
+                      />
+                      Station Details:
+                      <ul>
+                        <li>Station name: {{ station.Name }}</li>
+                        <li>Location: {{ station.Address }}</li>
+                        <li>
+                          Arrival battery:
+                          {{
+                            convert_battery(
+                              resultInfo["solution data"]["arrival battery"][
+                                index
+                              ],
+                              selectedBatteryCapacity
+                            )
+                          }}%
+                        </li>
+                        <li>
+                          Target battery:
+                          {{
+                            convert_battery(
+                              resultInfo["solution data"]["target battery"][
+                                index
+                              ],
+                              selectedBatteryCapacity
+                            )
+                          }}%
+                        </li>
+                        <li>
+                          Charging time:
+                          {{
+                            convert_time(
+                              resultInfo["solution data"]["charging time"][
+                                index
+                              ]
+                            )
+                          }}
+                        </li>
+                        <li>
+                          Driving time:
+                          {{
+                            convert_time(
+                              resultInfo["solution data"]["driving time"][index]
+                            )
+                          }}
+                        </li>
+                        <li>
+                          Total time:
+                          {{
+                            convert_time(
+                              resultInfo["solution data"]["total time"][index]
+                            )
+                          }}
+                        </li>
+                      </ul>
+                    </li>
+                  </ol>
                 </div>
               </div>
             </div>
             <div class="accordion-item">
               <h2 class="accordion-header" id="headingTwo">
                 <button
-                  class="accordion-button collapsed"
+                  class="accordion-button"
                   type="button"
                   data-bs-toggle="collapse"
                   data-bs-target="#collapseTwo"
-                  aria-expanded="false"
+                  aria-expanded="true"
                   aria-controls="collapseTwo"
                 >
                   Summary
@@ -346,12 +413,14 @@
               </h2>
               <div
                 id="collapseTwo"
-                class="accordion-collapse collapse"
+                class="accordion-collapse collapse show"
                 aria-labelledby="headingTwo"
-                data-bs-parent="#accordionExample"
               >
-                <div class="accordion-body">
-                  summary details...
+                <div class="accordion-body" v-if="resultInfo">
+                  <li>
+                    Estimated time:
+                    {{ convert_time(resultInfo["total time"]) }}
+                  </li>
                 </div>
               </div>
             </div>
@@ -379,14 +448,6 @@
     </div>
   </div>
 
-  <button
-    type="button"
-    class="btn btn-primary"
-    data-bs-toggle="modal"
-    data-bs-target="#errorModal"
-  >
-    test
-  </button>
   <div
     class="modal fade"
     id="errorModal"
@@ -411,7 +472,7 @@
             support for further assistance.
           </p>
           <p v-if="errorMessage" class="text-danger">
-            <b>ERROR: {{ errorMessage }}</b>
+            <b>{{ errorMessage }}</b>
           </p>
         </div>
         <div class="modal-footer">
@@ -429,31 +490,33 @@
   <!-- Loading Overlay -->
   <div v-if="isLoading" class="loading-overlay">
     <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
+      <span class="visually-hidden">Searching...</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, inject } from "vue";
 import { Loader } from "@googlemaps/js-api-loader";
+import { Modal } from "bootstrap";
+const $cookies = inject('$cookies');
 
 const cars_data = ref([]);
-const selectedBrand = ref(null);
-const selectedModel = ref(null);
+const selectedBrand = ref($cookies.get('car_brand') || null);
+const selectedModel = ref($cookies.get('car_model') || null);
 const selectedCar = ref({});
-const selectedBatteryCapacity = ref(null);
-const selectedAvailableChargers = ref([]);
-const selectedProvider = ref([]);
+const selectedBatteryCapacity = ref($cookies.get('battery_capacity') || null);
+const selectedAvailableChargers = ref($cookies.get('charging_ports') || []);
+const selectedProvider = ref($cookies.get('provider_filter') || []);
 const selectedReverseBattery = ref(10);
 const selectedInitBattery = ref(50);
 const selectedArrivalBattery = ref(50);
-const manualInputChecked = ref(false);
+const manualInputChecked = ref($cookies.get('manual_input') || false);
 const submitError = ref(false);
 const isLoading = ref(false);
+const resultInfo = ref(null);
 const errorMessage = ref(null);
 const formRef = ref(null);
-
 const providers = [
   { name: "PTT", logo: require("@/assets/station_logo/ptt.png") },
   { name: "PEA", logo: require("@/assets/station_logo/pea.png") },
@@ -513,16 +576,29 @@ const updateSelectedProvider = (event) => {
   }
 };
 
-const clearInput = (event) => {
-  event.target.value = null;
-};
-
 watch(manualInputChecked, () => {
   selectedBrand.value = null;
   selectedModel.value = null;
   selectedBatteryCapacity.value = null;
   selectedAvailableChargers.value = [];
 });
+
+const clearInput = (event) => {
+  event.target.value = null;
+};
+
+function convert_time(hours) {
+  const total_seconds = hours * 3600;
+
+  const h = Math.floor(total_seconds / 3600);
+  const m = Math.floor((total_seconds % 3600) / 60);
+  const s = Math.floor(total_seconds % 60);
+  return `${h} hours ${m} minutes ${s} seconds`;
+}
+
+function convert_battery(current, capacity) {
+  return Math.round((current / capacity) * 100);
+}
 
 onMounted(async () => {
   let map;
@@ -596,8 +672,18 @@ onMounted(async () => {
     );
   });
 
+  const resetMap = () => {
+    resultInfo.value = null;
+    errorMessage.value = null;
+    for (let i = 0; i < markers.length; i++) {
+      markers[i].setMap(null);
+    }
+    markers = [];
+    directionsRenderer.setDirections({ routes: [] });
+  };
+
   /* eslint-disable no-unused-vars */
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     submitError.value = false;
     if (!manualInputChecked.value) {
       if (!selectedBrand.value || !selectedModel.value) {
@@ -629,12 +715,9 @@ onMounted(async () => {
       return;
     } else {
       console.log("Form submitted successfully!");
-
-      for (let i = 0; i < markers.length; i++) {
-        markers[i].setMap(null);
-      }
-      markers = [];
-      directionsRenderer.setDirections({ routes: [] });
+      // Show loading overlay
+      isLoading.value = true;
+      resetMap();
 
       const request = {
         origin_address: origin,
@@ -649,21 +732,34 @@ onMounted(async () => {
         method: "forward",
       };
 
-      // Show loading overlay
-      isLoading.value = true;
+      // Save form data to cookies
+      $cookies.set('car_brand', selectedBrand.value);
+      $cookies.set('car_model', selectedModel.value);
+      $cookies.set('battery_initial', selectedInitBattery.value);
+      $cookies.set('battery_arrival', selectedArrivalBattery.value);
+      $cookies.set('battery_capacity', selectedBatteryCapacity.value);
+      $cookies.set('charging_ports', selectedAvailableChargers.value.join(","));
+      $cookies.set('provider_filter', selectedProvider.value.join(","));
+      $cookies.set('manual_input', manualInputChecked.value);
 
-      fetch(process.env.VUE_APP_API_URL + "/optimize", {
+      await fetch(process.env.VUE_APP_API_URL + "/optimize", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
       })
-        .then((response) => response.json())
-        .then((data) => {
+        .then(async (response) => {
+          if (response.status !== 200) {
+            throw new Error((await response.json()).error);
+          }
+          return response.json();
+        })
+        .then(async (data) => {
           // Hide loading overlay
           isLoading.value = false;
           console.log("Success:", data);
+          resultInfo.value = data;
 
           loader.load().then((google) => {
             function create_marker(location, title, data = null) {
@@ -678,6 +774,8 @@ onMounted(async () => {
               });
               markers.push(marker);
             }
+
+            function insert_details(details) {}
 
             const waypts = data["solution detail"].map((station) => {
               create_marker(
@@ -714,15 +812,23 @@ onMounted(async () => {
                 }
               }
             );
-
-            window.scrollTo({
-              top: document.body.scrollHeight,
-              behavior: "smooth",
-            });
           });
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth",
+          });
+          const infoModal = new Modal(document.getElementById("infoModal"), {
+            keyboard: false,
+          });
+          infoModal.show();
         })
         .catch((error) => {
-          console.error("Error:", error);
+          isLoading.value = false;
+          errorMessage.value = error;
+          const errorModal = new Modal(document.getElementById("errorModal"), {
+            keyboard: false,
+          });
+          errorModal.show();
         });
     }
   };
