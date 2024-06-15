@@ -499,19 +499,23 @@
 import { ref, computed, watch, onMounted, inject } from "vue";
 import { Loader } from "@googlemaps/js-api-loader";
 import { Modal } from "bootstrap";
-const $cookies = inject('$cookies');
+const $cookies = inject("$cookies");
 
 const cars_data = ref([]);
-const selectedBrand = ref($cookies.get('car_brand') || null);
-const selectedModel = ref($cookies.get('car_model') || null);
+const selectedBrand = ref($cookies.get("car_brand") || null);
+const selectedModel = ref($cookies.get("car_model") || null);
 const selectedCar = ref({});
-const selectedBatteryCapacity = ref($cookies.get('battery_capacity') || null);
-const selectedAvailableChargers = ref($cookies.get('charging_ports') || []);
-const selectedProvider = ref($cookies.get('provider_filter') || []);
+const selectedBatteryCapacity = ref($cookies.get("battery_capacity") || null);
+const selectedAvailableChargers = ref(
+  $cookies.get("charging_ports")?.split(",") || []
+);
+const selectedProvider = ref($cookies.get("provider_filter")?.split(",") || []);
 const selectedReverseBattery = ref(10);
 const selectedInitBattery = ref(50);
 const selectedArrivalBattery = ref(50);
-const manualInputChecked = ref($cookies.get('manual_input') || false);
+const manualInputChecked = ref(
+  Boolean($cookies.get("manual_input") == "true") || false
+);
 const submitError = ref(false);
 const isLoading = ref(false);
 const resultInfo = ref(null);
@@ -733,14 +737,12 @@ onMounted(async () => {
       };
 
       // Save form data to cookies
-      $cookies.set('car_brand', selectedBrand.value);
-      $cookies.set('car_model', selectedModel.value);
-      $cookies.set('battery_initial', selectedInitBattery.value);
-      $cookies.set('battery_arrival', selectedArrivalBattery.value);
-      $cookies.set('battery_capacity', selectedBatteryCapacity.value);
-      $cookies.set('charging_ports', selectedAvailableChargers.value.join(","));
-      $cookies.set('provider_filter', selectedProvider.value.join(","));
-      $cookies.set('manual_input', manualInputChecked.value);
+      $cookies.set("car_brand", selectedBrand.value);
+      $cookies.set("car_model", selectedModel.value);
+      $cookies.set("battery_capacity", selectedBatteryCapacity.value);
+      $cookies.set("charging_ports", selectedAvailableChargers.value.join(","));
+      $cookies.set("provider_filter", selectedProvider.value.join(","));
+      $cookies.set("manual_input", manualInputChecked.value);
 
       await fetch(process.env.VUE_APP_API_URL + "/optimize", {
         method: "POST",
@@ -772,10 +774,50 @@ onMounted(async () => {
                   scaledSize: new google.maps.Size(36, 45),
                 },
               });
+
+              if (title !== "origin" && title !== "destination") {
+                const contentString = `
+                <div class="container" style="max-height: 10rem; overflow-y: auto;">
+                  <div class="d-flex align-items-center">
+                    <img
+                      src="${require(`@/assets/station_logo/${title.toLowerCase()}.png`)}"
+                      alt="${title}"
+                      style="width: 30px; height: 30px"
+                      class="img-fluid rounded-circle me-2 mb-2"
+                    />
+                    <h6>${data ? data.Name : ""}</h6>
+                  </div>
+                  <div>
+                    <p>Provider: ${data ? data.Provider : ""}</p>
+                    <p>Address: ${data ? data.Address : ""}</p>
+                    <p>Power: ${data ? data.Power : ""}</p>
+                    <p>Type1: ${data ? data.Type1 : ""}</p>
+                    <p>Type1Count: ${data ? data.Type1Count : ""}</p>
+                    <p>Type2: ${data ? data.Type2 : ""}</p>
+                    <p>Type2Count: ${data ? data.Type2Count : ""}</p>
+                    <p>CCS2: ${data ? data.CCS2 : ""}</p>
+                    <p>CCS2Count: ${data ? data.CCS2Count : ""}</p>
+                    <p>CHAdeMO: ${data ? data.CHAdeMO : ""}</p>
+                    <p>CHAdeMOCount: ${data ? data.CHAdeMOCount : ""}</p>
+                    <p>Superchargers: ${data ? data.Superchargers : ""}</p>
+                    <p>SuperchargersCount: ${
+                      data ? data.SuperchargersCount : ""
+                    }</p>
+                  </div>
+                </div>
+              `;
+
+                const infowindow = new google.maps.InfoWindow({
+                  content: contentString,
+                });
+
+                marker.addListener("click", () => {
+                  infowindow.open(map, marker);
+                });
+              }
+
               markers.push(marker);
             }
-
-            function insert_details(details) {}
 
             const waypts = data["solution detail"].map((station) => {
               create_marker(
