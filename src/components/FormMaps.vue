@@ -222,15 +222,25 @@
       <fieldset class="mb-3">
         <div class="mb-3">
           <label for="search-origin" class="form-label">Origin Location</label>
-          <input
-            type="text"
-            id="search-origin"
-            class="form-control"
-            placeholder="Enter an origin location"
-            required
-            @focus="clearInput"
-            :disabled="isLoading"
-          />
+          <div class="d-flex align-items-center">
+            <input
+              type="text"
+              id="search-origin"
+              class="form-control"
+              placeholder="Enter an origin location"
+              required
+              @focus="clearInput"
+              :disabled="isLoading"
+            />
+            <div>
+              <a id="origin-pointer" type="button" target="_blank" href="#"
+                ><img
+                  class="ms-2"
+                  src="@/assets/location-current-solid.svg"
+                  style="width: 20px; height: 20px"
+              /></a>
+            </div>
+          </div>
           <small class="form-text" style="color: #ffa23a"
             >* Please select a location from the dropdown list</small
           >
@@ -240,15 +250,25 @@
           <label for="search-destination" class="form-label"
             >Destination Location</label
           >
-          <input
-            type="text"
-            id="search-destination"
-            class="form-control"
-            placeholder="Enter a destination location"
-            required
-            @focus="clearInput"
-            :disabled="isLoading"
-          />
+          <div class="d-flex align-items-center">
+            <input
+              type="text"
+              id="search-destination"
+              class="form-control"
+              placeholder="Enter a destination location"
+              required
+              @focus="clearInput"
+              :disabled="isLoading"
+            />
+            <div>
+              <a id="destination-pointer" type="button" target="_blank" href="#"
+                ><img
+                  class="ms-2"
+                  src="@/assets/location-current-solid.svg"
+                  style="width: 20px; height: 20px"
+              /></a>
+            </div>
+          </div>
           <small class="form-text" style="color: #ffa23a"
             >* Please select a location from the dropdown list</small
           >
@@ -684,6 +704,7 @@ onMounted(async () => {
     }
     markers = [];
     directionsRenderer.setDirections({ routes: [] });
+    document.getElementById("gmap-links").href = "https://www.google.com/maps";
   };
 
   /* eslint-disable no-unused-vars */
@@ -715,10 +736,8 @@ onMounted(async () => {
     const destination = document.getElementById("search-destination").value;
 
     if (submitError.value) {
-      console.error("Error in form submission!");
       return;
     } else {
-      console.log("Form submitted successfully!");
       // Show loading overlay
       isLoading.value = true;
       resetMap();
@@ -760,19 +779,20 @@ onMounted(async () => {
         .then(async (data) => {
           // Hide loading overlay
           isLoading.value = false;
-          console.log("Success:", data);
           resultInfo.value = data;
 
           loader.load().then((google) => {
             function create_marker(location, title, data = null) {
-              const marker = new google.maps.Marker({
+              const marker_ico = document.createElement("img");
+              marker_ico.src = require(`@/assets/station_marker/${title.toLowerCase()}.png`);
+              marker_ico.style.width = "36px";
+              marker_ico.style.height = "45px";
+
+              const marker = new google.maps.marker.AdvancedMarkerElement({
                 position: location,
                 map: map,
                 title: title,
-                icon: {
-                  url: require(`@/assets/station_marker/${title.toLowerCase()}.png`),
-                  scaledSize: new google.maps.Size(36, 45),
-                },
+                content: marker_ico,
               });
 
               if (title !== "origin" && title !== "destination") {
@@ -819,6 +839,38 @@ onMounted(async () => {
               markers.push(marker);
             }
 
+            function navigator_button(response) {
+              var origin = response.routes[0].legs[0].start_location;
+              var destination =
+                response.routes[0].legs[response.routes[0].legs.length - 1]
+                  .end_location;
+              var waypoints = [];
+
+              var origin_location = origin.lat() + "," + origin.lng();
+              var destination_location =
+                destination.lat() + "," + destination.lng();
+
+              var url =
+                "https://www.google.com/maps/dir/?api=1&origin=" +
+                origin_location +
+                "&destination=" +
+                destination_location;
+
+              for (var i = 0; i < response.routes[0].legs.length - 1; i++) {
+                var waypoint = response.routes[0].legs[i].end_location;
+                var waypoint_location = waypoint.lat() + "," + waypoint.lng();
+                waypoints.push(waypoint_location);
+              }
+
+              if (waypoints.length > 0) {
+                url += "&waypoints=" + waypoints.join("|");
+              }
+
+              url += "&travelmode=driving";
+
+              document.getElementById("gmap-links").href = url;
+            }
+
             const waypts = data["solution detail"].map((station) => {
               create_marker(
                 { lat: station.Latitude, lng: station.Longitude },
@@ -849,6 +901,7 @@ onMounted(async () => {
 
                   create_marker(origin_leg.start_location, "origin");
                   create_marker(destination_leg.end_location, "destination");
+                  navigator_button(result);
                 } else {
                   alert("Directions request failed due to " + status);
                 }
