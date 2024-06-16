@@ -233,7 +233,7 @@
               :disabled="isLoading"
             />
             <div>
-              <a id="origin-pointer" type="button" target="_blank" href="#"
+              <a id="origin-pointer" type="button"
                 ><img
                   class="ms-2"
                   src="@/assets/location-current-solid.svg"
@@ -261,7 +261,7 @@
               :disabled="isLoading"
             />
             <div>
-              <a id="destination-pointer" type="button" target="_blank" href="#"
+              <a id="destination-pointer" type="button"
                 ><img
                   class="ms-2"
                   src="@/assets/location-current-solid.svg"
@@ -628,6 +628,9 @@ onMounted(async () => {
   let map;
   let markers = [];
 
+  let origin_draggable = null;
+  let destination_draggable = null;
+
   const loader = new Loader({
     apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
     version: "weekly",
@@ -930,7 +933,68 @@ onMounted(async () => {
   if (formRef.value) {
     formRef.value.addEventListener("submit", handleSubmit);
   }
+
+  function draggableMarker(title = null) {
+    const marker_ico = document.createElement("img");
+    marker_ico.src = require(`@/assets/station_marker/${title.toLowerCase()}.png`);
+    marker_ico.style.width = "36px";
+    marker_ico.style.height = "45px";
+
+    loader.load().then((google) => {
+      const draggableMarker = new google.maps.marker.AdvancedMarkerElement({
+        position: map.getCenter(),
+        map: map,
+        gmpDraggable: true,
+        title: title,
+        content: marker_ico,
+      });
+
+      const infoWindow = new google.maps.InfoWindow();
+
+      draggableMarker.addListener("dragend", (event) => {
+        const position = draggableMarker.position;
+        infoWindow.close();
+        infoWindow.setContent(
+          `Pin dropped at: ${position.lat}, ${position.lng}`
+        );
+        infoWindow.open(draggableMarker.map, draggableMarker);
+      });
+
+      if (title === "origin") {
+        if (origin_draggable) {
+          origin_draggable.setMap(null);
+        }
+        origin_draggable = draggableMarker;
+      } else {
+        if (destination_draggable) {
+          destination_draggable.setMap(null);
+        }
+        destination_draggable = draggableMarker;
+      }
+    });
+
+    return draggableMarker;
+  }
+
+  document.getElementById("origin-pointer").addEventListener("click", () => {
+    draggableMarker("origin");
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth",
+    });
+  });
+
+  document
+    .getElementById("destination-pointer")
+    .addEventListener("click", () => {
+      draggableMarker("destination");
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth",
+      });
+    });
 });
+
 </script>
 
 <script>
