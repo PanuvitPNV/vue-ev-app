@@ -751,13 +751,14 @@ onMounted(async () => {
         car_brand: selectedBrand.value,
         car_model: selectedModel.value,
         battery_initial: selectedInitBattery.value,
-        battery_arrival: selectedArrivalBattery.value,
+        battery_destination: selectedArrivalBattery.value,
         battery_capacity: selectedBatteryCapacity.value,
-        charging_ports: selectedAvailableChargers.value.join(","),
+        reserve_baterry: selectedReverseBattery.value,
+        usable_battype: selectedAvailableChargers.value.join(","),
         provider_filter: selectedProvider.value.join(","),
         method: "forward",
       };
-
+      
       // Save form data to cookies
       $cookies.set("car_brand", selectedBrand.value);
       $cookies.set("car_model", selectedModel.value);
@@ -766,7 +767,7 @@ onMounted(async () => {
       $cookies.set("provider_filter", selectedProvider.value.join(","));
       $cookies.set("manual_input", manualInputChecked.value);
 
-      await fetch(process.env.VUE_APP_API_URL + "/optimize", {
+      await fetch(process.env.VUE_APP_API_URL + "/singlechain_optimize", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
